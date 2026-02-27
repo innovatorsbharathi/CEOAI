@@ -1,0 +1,352 @@
+# ==========================================================
+# CEO-AI BUSINESS PLAN ANALYST AGENT (GOOGLE COLAB)
+# Powered by GEMINI API — using new google-genai SDK
+# ==========================================================
+
+# -------------------------------
+# 1. INSTALL DEPENDENCIES
+# -------------------------------
+!pip install -q google-genai langchain langchain-community \
+langchain-text-splitters langchain-core faiss-cpu pypdf python-docx tiktoken gTTS
+
+
+# -------------------------------
+# 2. IMPORT LIBRARIES
+# -------------------------------
+import os
+import numpy as np
+from google.colab import files
+
+from google import genai                                      # NEW SDK
+from google.genai import types
+
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.language_models.chat_models import SimpleChatModel
+from langchain_core.messages import BaseMessage, AIMessage
+
+from pypdf import PdfReader
+from docx import Document
+
+
+# -------------------------------
+# 3. ADD YOUR GEMINI API KEY
+# -------------------------------
+# Get your free key at: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY = ""
+
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+
+# -------------------------------
+# 4. AUTO-DETECT BEST MODELS
+# -------------------------------
+print("Detecting available Gemini models...")
+
+all_models = [m.name for m in client.models.list()]
+
+# Pick best embedding model
+embed_candidates = [
+    "models/gemini-embedding-exp-03-07",
+    "models/text-embedding-004",
+    "models/gemini-embedding-001",
+    "models/embedding-001",
+]
+EMBED_MODEL = next((m for m in embed_candidates if m in all_models), None)
+if not EMBED_MODEL:
+    # fallback: first model with 'embed' in name
+    EMBED_MODEL = next((m for m in all_models if "embed" in m.lower()), None)
+
+# Pick best chat model
+chat_candidates = [
+    "models/gemini-2.5-flash",
+    "models/gemini-2.0-flash-lite",
+    "models/gemini-1.5-flash",
+    "models/gemini-1.5-pro",
+]
+CHAT_MODEL = next((m for m in chat_candidates if m in all_models), None)
+if not CHAT_MODEL:
+    CHAT_MODEL = next((m for m in all_models if "flash" in m.lower() or "pro" in m.lower()), None)
+
+if not EMBED_MODEL:
+    raise RuntimeError("No embedding model found. Check your API key.")
+if not CHAT_MODEL:
+    raise RuntimeError("No chat model found. Check your API key.")
+
+print(f"  Embedding model : {EMBED_MODEL}")
+print(f"  Chat model      : {CHAT_MODEL}")
+
+
+# -------------------------------
+# 5. UPLOAD BUSINESS PLAN
+# -------------------------------
+print("\nUpload your Business Plan (PDF / DOCX / TXT)")
+uploaded = files.upload()
+file_name = list(uploaded.keys())[0]
+
+
+# -------------------------------
+# 6. TEXT EXTRACTION
+# -------------------------------
+def extract_text(file_name):
+    if file_name.endswith(".pdf"):
+        reader = PdfReader(file_name)
+        return "".join(page.extract_text() or "" for page in reader.pages)
+    elif file_name.endswith(".docx"):
+        doc = Document(file_name)
+        return "\n".join(p.text for p in doc.paragraphs)
+    elif file_name.endswith(".txt"):
+        with open(file_name, "r", encoding="utf-8") as f:
+            return f.read()
+    else:
+        raise ValueError("Unsupported format. Use PDF, DOCX, or TXT.")
+
+print("Extracting text...")
+text = extract_text(file_name)
+print("\nPreview:\n", text[:800])
+
+
+# -------------------------------
+# 7. CHUNK THE DOCUMENT
+# -------------------------------
+print("\nChunking document...")
+splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=200)
+docs = splitter.create_documents([text])
+print(f"Total chunks: {len(docs)}")
+
+
+# -------------------------------
+# 8. NATIVE EMBEDDINGS WRAPPER
+# Uses new google-genai SDK directly
+# -------------------------------
+class GeminiEmbeddings(Embeddings):
+    def embed_documents(self, texts):
+        result = client.models.embed_content(
+            model=EMBED_MODEL,
+            contents=texts,
+        )
+        return [e.values for e in result.embeddings]
+
+    def embed_query(self, text):
+        result = client.models.embed_content(
+            model=EMBED_MODEL,
+            contents=[text],
+        )
+        return result.embeddings[0].values
+
+
+# -------------------------------
+# 9. BUILD VECTOR DATABASE
+# -------------------------------
+print("\nBuilding vector memory...")
+embeddings = GeminiEmbeddings()
+vector_db = FAISS.from_documents(docs, embeddings)
+retriever = vector_db.as_retriever(search_kwargs={"k": 4})
+print("Vector memory ready!")
+
+
+# -------------------------------
+# 10. NATIVE LLM WRAPPER
+# With automatic retry and model fallback on quota errors
+# -------------------------------
+import time, re
+
+# Fallback chain — tries cheaper/lighter models if quota hit
+CHAT_FALLBACKS = [m for m in [
+    "models/gemini-2.0-flash-lite",
+    "models/gemini-1.5-flash-8b",
+    "models/gemini-1.5-flash",
+    "models/gemini-2.0-flash",
+    "models/gemini-1.5-pro",
+] if m in all_models]
+
+_active_model = CHAT_MODEL   # global, updated on fallback
+
+class GeminiChat(SimpleChatModel):
+    model: str = CHAT_MODEL
+    temperature: float = 0.2
+
+    def _call(self, messages: list[BaseMessage], stop=None, run_manager=None, **kwargs) -> str:
+        global _active_model
+        prompt = "\n".join(m.content for m in messages)
+
+        tried = set()
+        candidates = [_active_model] + [m for m in CHAT_FALLBACKS if m != _active_model]
+
+        for model in candidates:
+            if model in tried:
+                continue
+            tried.add(model)
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(temperature=self.temperature),
+                )
+                _active_model = model   # remember what worked
+                return response.text
+
+            except Exception as e:
+                err = str(e)
+                if "429" in err or "RESOURCE_EXHAUSTED" in err:
+                    wait_match = re.search(r"retry in ([\d.]+)s", err)
+                    wait = float(wait_match.group(1)) + 2 if wait_match else 15
+                    print(f"⚠️  Quota hit on {model}. Trying next model...")
+                    time.sleep(2)   # brief pause before next attempt
+                    continue
+                else:
+                    raise
+
+        # Last resort: wait and retry original model
+        print(f"All models quota-hit. Waiting 60s then retrying {CHAT_FALLBACKS[-1]}...")
+        time.sleep(60)
+        response = client.models.generate_content(
+            model=CHAT_FALLBACKS[-1],
+            contents=prompt,
+            config=types.GenerateContentConfig(temperature=self.temperature),
+        )
+        return response.text
+
+    @property
+    def _llm_type(self) -> str:
+        return "gemini"
+
+print(f"Chat model      : {_active_model}")
+print(f"Fallback chain  : {' → '.join(CHAT_FALLBACKS)}")
+llm = GeminiChat()
+
+
+# -------------------------------
+# 11. BUILD RAG CHAIN
+# -------------------------------
+prompt_template = PromptTemplate.from_template("""
+You are an expert business analyst. Use the context from the business plan below to answer the question.
+If the context doesn't have enough information, say so.
+
+Context:
+{context}
+
+Question:
+{question}
+
+Answer:
+""")
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+rag_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt_template
+    | llm
+    | StrOutputParser()
+)
+
+def ask(question):
+    return rag_chain.invoke(question)
+
+
+# -------------------------------
+# 12. CEO EXECUTIVE ANALYSIS
+# -------------------------------
+analysis_prompt = """
+You are an AI Chief Executive Officer and Venture Capital Analyst.
+
+Analyze the uploaded business plan deeply and provide:
+
+1. Executive Summary (understanding of business)
+2. Business Model Evaluation
+3. Market Opportunity Strength
+4. Revenue Risks
+5. Cost Optimization Opportunities
+6. Competitive Weaknesses
+7. Missing KPIs founders should track
+8. Investor Concerns (brutally honest)
+9. Strategic Recommendations (Top 7)
+10. 90-Day Execution Roadmap
+
+Be practical, specific, and actionable. Avoid generic advice.
+"""
+
+print("\nRunning CEO Agent Analysis...\n")
+result = ask(analysis_prompt)
+
+print("=" * 50)
+print("         CEO AI ANALYSIS REPORT")
+print("=" * 50 + "\n")
+print(result)
+
+
+# -------------------------------
+# 13. EXECUTIVE PANEL (CFO / COO / VC)
+# -------------------------------
+questions = [
+    "Act as a CFO. What financial risks exist in this business plan?",
+    "Act as a COO. What execution problems may occur and how to prevent them?",
+    "Act as a Venture Capitalist. Would you invest in this business? Why or why not?",
+    "What 3 decisions should founders take immediately to improve their chances of success?",
+]
+
+print("\n\n========== EXECUTIVE PANEL REVIEW ==========\n")
+for q in questions:
+    print(f"\n--- {q} ---\n")
+    print(ask(q))
+
+
+# -------------------------------
+# 14. TEXT-TO-SPEECH SETUP
+# Plays AI answers as voice in Google Colab
+# -------------------------------
+from gtts import gTTS
+from IPython.display import Audio, display
+import tempfile, os
+
+def speak(text):
+    """Convert text to speech and auto-play in Colab."""
+    try:
+        # Clean text — remove markdown symbols that sound bad when read aloud
+        import re
+        clean = re.sub(r"[*#`_]", "", text)          # remove *, #, `, _
+        clean = re.sub(r"\n+", ". ", clean)           # newlines → pauses
+        clean = re.sub(r"\s+", " ", clean).strip()    # collapse spaces
+
+        tts = gTTS(text=clean, lang="en", slow=False)
+
+        # Save to temp file and play
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
+            tts.save(f.name)
+            display(Audio(f.name, autoplay=True))
+
+    except Exception as e:
+        print(f"[Voice error: {e}]")
+
+
+# -------------------------------
+# 15. INTERACTIVE CEO CHAT MODE
+# Type question → AI answers in TEXT + VOICE
+# -------------------------------
+print("\n\nCEO Agent Ready. Ask anything about the business plan.")
+print("Answers will be spoken aloud automatically.")
+print("Type 'exit' to stop.\n")
+
+while True:
+    user_q = input("You: ")
+
+    if user_q.lower() == "exit":
+        print("Session ended. Good luck with your venture!")
+        break
+
+    response = ask(user_q)
+
+    # Show text answer
+    print("\nCEO AI:", response)
+    print()
+
+    # Speak the answer
+    print("[Speaking...]")
+    speak(response)
+    print()
