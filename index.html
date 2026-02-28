@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEOAI — TECNA INNOVATIONS</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;500;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:#020408;--deep:#050c14;--panel:rgba(5,14,26,0.88);--glass:rgba(8,22,40,0.65);
+  --blue:#00c8ff;--blue-dim:rgba(0,200,255,0.10);--blue-glow:rgba(0,200,255,0.40);
+  --green:#00ff88;--green-dim:rgba(0,255,136,0.09);--green-glow:rgba(0,255,136,0.35);
+  --red:#ff2d55;--red-dim:rgba(255,45,85,0.10);
+  --amber:#ffaa00;--amber-dim:rgba(255,170,0,0.10);
+  --text:#d0eeff;--text-mid:rgba(180,220,255,0.55);--text-lo:rgba(120,170,210,0.35);
+  --border:rgba(0,180,255,0.10);--border-hi:rgba(0,200,255,0.28);
+  --mono:'Share Tech Mono',monospace;--cond:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:15px;}
+body{background:var(--void);color:var(--text);font-family:var(--body);min-height:100vh;overflow-x:hidden;cursor:none;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.022) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.055) 3px,rgba(0,0,0,0.055) 4px);pointer-events:none;z-index:1001;}
+.cursor{position:fixed;width:20px;height:20px;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
+.cursor::before{content:'';position:absolute;inset:0;border:1px solid var(--blue);border-radius:50%;animation:cpulse 2s ease-in-out infinite;}
+.cursor::after{content:'';position:absolute;top:50%;left:50%;width:4px;height:4px;background:var(--blue);border-radius:50%;transform:translate(-50%,-50%);}
+@keyframes cpulse{50%{transform:scale(1.5);opacity:0.5}}
+@keyframes blink{50%{opacity:0}}
+@keyframes fadeSlide{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fillAnnual{to{width:30%}}
+@keyframes fillMonthly{to{width:80%}}
+@keyframes taskFill{from{width:0!important}}
+
+/* STATUS BAR */
+.statusbar{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:10px 28px;background:rgba(2,4,8,0.95);border-bottom:1px solid var(--border-hi);backdrop-filter:blur(20px);}
+.sb-id{font-family:var(--cond);font-size:22px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:var(--blue);text-shadow:0 0 20px var(--blue-glow);}
+.sb-id span{color:var(--text-lo);font-weight:300;}
+.sb-left{display:flex;align-items:center;gap:20px;}
+.sb-divider{width:1px;height:28px;background:var(--border-hi);}
+.sb-entity{font-family:var(--mono);font-size:11px;color:var(--text);letter-spacing:1px;}
+.sb-center{text-align:center;}
+.sb-objective{font-family:var(--cond);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-lo);}
+.sb-obj-val{font-family:var(--cond);font-size:20px;font-weight:800;letter-spacing:1px;color:var(--green);text-shadow:0 0 16px var(--green-glow);}
+.sb-right{display:flex;align-items:center;gap:20px;font-family:var(--mono);font-size:11px;}
+.sb-clock{color:var(--text-mid);}
+.sb-vitals{display:flex;align-items:center;gap:12px;}
+.vital-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;border:1px solid;font-size:10px;letter-spacing:1px;}
+.vital-online{border-color:rgba(0,255,136,0.3);color:var(--green);background:var(--green-dim);}
+.vital-warn{border-color:rgba(255,170,0,0.3);color:var(--amber);background:var(--amber-dim);}
+.vdot{width:5px;height:5px;border-radius:50%;animation:blink 1.4s step-end infinite;}
+.vdot-g{background:var(--green);box-shadow:0 0 6px var(--green);}
+.vdot-a{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+
+/* GRID */
+.grid{position:relative;z-index:10;display:grid;grid-template-columns:1fr 390px;gap:14px;padding:16px 20px;max-width:1920px;margin:0 auto;}
+.col-left{display:flex;flex-direction:column;gap:14px;}
+.col-right{display:flex;flex-direction:column;gap:14px;}
+
+/* PANEL */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;position:relative;overflow:hidden;transition:border-color 0.3s;animation:panelIn 0.5s ease both;}
+.panel:hover{border-color:var(--border-hi);}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,200,255,0.08),rgba(0,200,255,0.18),rgba(0,200,255,0.08),transparent);}
+.panel::after{content:'';position:absolute;top:6px;right:6px;width:10px;height:10px;border-top:1px solid var(--border-hi);border-right:1px solid var(--border-hi);}
+.glow-b{box-shadow:0 0 0 1px rgba(0,200,255,0.08),0 8px 32px rgba(0,100,200,0.18);}
+.glow-g{box-shadow:0 0 0 1px rgba(0,255,136,0.08),0 8px 32px rgba(0,150,80,0.14);}
+.glow-r{box-shadow:0 0 0 1px rgba(255,45,85,0.12),0 8px 32px rgba(180,0,40,0.14);}
+
+/* PANEL HEADER */
+.ph{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;border-bottom:1px solid var(--border);}
+.ph-tag{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;}
+.ph-title{font-family:var(--cond);font-size:16px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text);margin-top:2px;}
+.ph-badge{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:2px;}
+.badge-g{background:var(--green-dim);border:1px solid rgba(0,255,136,0.22);color:var(--green);}
+.badge-b{background:var(--blue-dim);border:1px solid rgba(0,200,255,0.22);color:var(--blue);}
+.badge-r{background:var(--red-dim);border:1px solid rgba(255,45,85,0.22);color:var(--red);}
+.badge-a{background:var(--amber-dim);border:1px solid rgba(255,170,0,0.22);color:var(--amber);}
+
+/* MISSION PANEL */
+.mission-panel{padding:20px 22px 18px;}
+.mp-row1{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+.mp-unit{font-family:var(--mono);font-size:11px;color:var(--text-lo);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.mp-statement{font-family:var(--cond);font-size:28px;font-weight:800;letter-spacing:0.5px;line-height:1.2;color:var(--text);text-transform:uppercase;}
+.hl-blue{color:var(--blue);text-shadow:0 0 16px var(--blue-glow);}
+.hl-green{color:var(--green);text-shadow:0 0 16px var(--green-glow);}
+.hl-red{color:var(--red);text-shadow:0 0 14px rgba(255,45,85,0.5);}
+.mp-status-block{text-align:right;flex-shrink:0;padding-left:20px;}
+.mp-fy{font-family:var(--mono);font-size:10px;color:var(--text-lo);letter-spacing:2px;margin-bottom:7px;}
+.mp-uptime{font-family:var(--cond);font-size:13px;font-weight:600;color:var(--green);letter-spacing:1px;}
+.progress-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0;}
+.prog-block{}
+.prog-label{font-family:var(--mono);font-size:10px;color:var(--text-lo);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.prog-val{font-family:var(--cond);font-size:38px;font-weight:900;letter-spacing:-1px;line-height:1;}
+.pv-achieved{color:var(--blue);text-shadow:0 0 20px var(--blue-glow);}
+.pv-gap{color:var(--red);text-shadow:0 0 16px rgba(255,45,85,0.5);}
+.prog-sub{font-family:var(--mono);font-size:11px;color:var(--text-lo);margin-top:4px;}
+.annual-bar-track{height:14px;background:rgba(0,200,255,0.07);border:1px solid rgba(0,200,255,0.12);border-radius:2px;overflow:hidden;position:relative;}
+.annual-bar-fill{height:100%;width:0;border-radius:1px;background:linear-gradient(90deg,#0066ff,var(--blue),var(--green));box-shadow:0 0 16px rgba(0,200,255,0.5);animation:fillAnnual 2.5s cubic-bezier(0.16,1,0.3,1) 0.3s forwards;}
+.annual-bar-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:white;opacity:0.8;animation:barShine 2s ease-in-out 2.8s infinite;}
+@keyframes barShine{0%,100%{opacity:0.8}50%{opacity:0.2}}
+.annual-bar-segments{display:flex;justify-content:space-between;margin-top:5px;}
+.seg{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--text-lo);text-align:center;flex:1;}
+.seg.done{color:var(--blue);}
+.gap-alert{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 16px;background:var(--red-dim);border:1px solid rgba(255,45,85,0.22);border-radius:3px;}
+.ga-label{font-family:var(--mono);font-size:9px;color:var(--text-lo);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:3px;}
+.ga-val{font-family:var(--mono);font-size:12px;color:var(--red);}
+
+/* MONTHLY */
+.monthly-body{padding:16px 20px;}
+.monthly-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
+.m-tile{padding:12px 14px;background:var(--glass);border:1px solid var(--border);border-radius:3px;}
+.m-tile-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--amber);text-transform:uppercase;margin-bottom:5px;}
+.m-tile-val{font-family:var(--cond);font-size:24px;font-weight:800;letter-spacing:-0.5px;line-height:1;}
+.mtv-g{color:var(--green);text-shadow:0 0 12px var(--green-glow);}
+.mtv-b{color:var(--blue);}
+.mtv-r{color:var(--red);text-shadow:0 0 10px rgba(255,45,85,0.4);}
+.m-tile-sub{font-family:var(--mono);font-size:10px;color:var(--text-lo);margin-top:4px;}
+.monthly-bar-track{height:8px;background:rgba(0,255,136,0.07);border:1px solid rgba(0,255,136,0.12);border-radius:1px;overflow:hidden;}
+.monthly-bar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),#00ffcc);box-shadow:0 0 10px var(--green-glow);animation:fillMonthly 1.8s ease-out 1s forwards;}
+.monthly-bar-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;margin-top:4px;}
+.mbl-l{color:var(--green);}
+.mbl-r{color:var(--text-lo);}
+.critical-banner{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:10px 14px;background:linear-gradient(90deg,rgba(0,255,136,0.07),rgba(0,255,136,0.02));border:1px solid rgba(0,255,136,0.2);border-left:3px solid var(--green);border-radius:0 3px 3px 0;}
+.cb-label{font-family:var(--mono);font-size:10px;color:var(--text);letter-spacing:1.5px;text-transform:uppercase;}
+.cb-val{font-family:var(--cond);font-size:20px;font-weight:800;color:var(--green);letter-spacing:0.5px;}
+
+/* CHART */
+.chart-body{padding:14px 18px;height:200px;}
+
+/* TASKS */
+.tasks-body{padding:14px 18px;}
+.task-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.task-row:last-child{border-bottom:none;}
+.task-num{font-family:var(--mono);font-size:11px;color:var(--text-lo);width:20px;flex-shrink:0;text-align:right;}
+.task-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.td-r{background:var(--red);box-shadow:0 0 6px var(--red);}
+.td-a{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.td-g{background:var(--green);box-shadow:0 0 6px var(--green);}
+.task-info{flex:1;min-width:0;}
+.task-name{font-family:var(--body);font-size:13px;font-weight:600;color:var(--text);line-height:1.3;}
+.task-cat{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--text);text-transform:uppercase;margin-top:2px;}
+.task-bar-wrap{width:100px;flex-shrink:0;}
+.task-bar-bg{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;}
+.task-bar-fill{height:100%;border-radius:2px;animation:taskFill 1.5s ease-out 1.2s both;}
+.tbf-b{background:var(--blue);box-shadow:0 0 6px var(--blue-glow);}
+.tbf-g{background:var(--green);box-shadow:0 0 6px var(--green-glow);}
+.tbf-a{background:var(--amber);}
+.task-pct{font-family:var(--mono);font-size:10px;color:var(--text-lo);width:34px;text-align:right;flex-shrink:0;}
+.task-time{font-family:var(--mono);font-size:10px;color:var(--text-lo);width:48px;text-align:right;flex-shrink:0;}
+
+/* LEADERBOARD */
+.lb-body{padding:10px 0;}
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--border);transition:background 0.2s;}
+.lb-row:last-child{border-bottom:none;}
+.lb-row:hover{background:rgba(0,200,255,0.03);}
+.lb-rank{font-family:var(--cond);font-size:18px;font-weight:900;width:22px;text-align:center;flex-shrink:0;}
+.rk1{color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,0.6);}
+.rk2{color:#b0c4de;}
+.rk3{color:#cd7f32;}
+.rk-n{color:var(--text-lo);font-size:14px;}
+.lb-av{width:32px;height:32px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--cond);font-size:12px;font-weight:700;flex-shrink:0;border:1px solid;}
+.lb-info{flex:1;}
+.lb-name{font-family:var(--body);font-size:13px;font-weight:600;color:var(--text);}
+.lb-role{font-family:var(--mono);font-size:9px;color:var(--text-lo);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px;}
+.lb-bar-col{width:70px;flex-shrink:0;}
+.lb-bar-bg{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;}
+.lb-bar-fill{height:100%;border-radius:2px;animation:taskFill 1.5s ease-out 1.4s both;}
+.lb-val{font-family:var(--cond);font-size:16px;font-weight:800;flex-shrink:0;width:48px;text-align:right;}
+
+/* SIGNALS */
+.signals-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--border);}
+.sig-tile{padding:13px 15px;border-right:1px solid var(--border);transition:background 0.2s;}
+.sig-tile:last-child{border-right:none;}
+.sig-tile:hover{background:rgba(0,200,255,0.03);}
+.sig-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text-lo);text-transform:uppercase;margin-bottom:5px;}
+.sig-val{font-family:var(--cond);font-size:21px;font-weight:800;line-height:1;}
+.sv-g{color:var(--green);}
+.sv-b{color:var(--blue);}
+.sv-a{color:var(--amber);}
+.sig-delta{font-family:var(--mono);font-size:10px;margin-top:3px;}
+.sd-up{color:var(--green);}
+.sd-dn{color:var(--red);}
+.sd-fl{color:var(--amber);}
+
+/* VITALS */
+.vitals-body{padding:14px 18px;}
+.vitals-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.vt{padding:12px 14px;background:var(--glass);border:1px solid var(--border);border-radius:3px;text-align:center;}
+.vt-icon{font-size:18px;margin-bottom:5px;}
+.vt-val{font-family:var(--cond);font-size:26px;font-weight:800;line-height:1;}
+.vt-g{color:var(--green);text-shadow:0 0 12px var(--green-glow);}
+.vt-b{color:var(--blue);text-shadow:0 0 12px var(--blue-glow);}
+.vt-a{color:var(--amber);}
+.vt-label{font-family:var(--mono);font-size:9px;color:var(--text-lo);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;}
+.ekg-wrap{height:52px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:3px;background:rgba(0,255,136,0.025);margin-bottom:10px;}
+.ekg-label{position:absolute;top:5px;left:8px;font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:1px;}
+.integ-row{display:flex;gap:8px;}
+.integ-tile{flex:1;padding:8px 12px;border-radius:3px;text-align:center;}
+.it-label{font-family:var(--mono);font-size:9px;color:var(--text-lo);letter-spacing:1.5px;}
+.it-status{font-family:var(--mono);font-size:11px;margin-top:3px;}
+.it-g{background:var(--green-dim);border:1px solid rgba(0,255,136,0.2);color:var(--green);}
+.it-a{background:var(--amber-dim);border:1px solid rgba(255,170,0,0.2);color:var(--amber);}
+
+/* NEXT MOVE */
+.nextmove-body{padding:16px 18px;}
+.nm-priority{font-family:var(--mono);font-size:9px;letter-spacing:2.5px;color:var(--red);text-transform:uppercase;margin-bottom:8px;}
+.nm-action{font-family:var(--cond);font-size:20px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.5px;line-height:1.3;margin-bottom:12px;}
+.nm-hl{color:var(--blue);}
+.nm-rationale{font-family:var(--mono);font-size:10px;color:var(--text);line-height:1.75;margin-bottom:14px;padding:10px 12px;background:var(--glass);border-left:2px solid var(--blue);border-radius:0 3px 3px 0;}
+.nm-meta{display:flex;gap:10px;}
+.nm-tag{font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.nm-deadline{background:var(--red-dim);border:1px solid rgba(255,45,85,0.22);color:var(--red);}
+.nm-impact{background:var(--green-dim);border:1px solid rgba(0,255,136,0.22);color:var(--green);}
+
+/* SWARM */
+.swarm-body{padding:14px 18px;}
+.swarm-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.swarm-total{font-family:var(--cond);font-size:36px;font-weight:900;color:var(--blue);text-shadow:0 0 20px var(--blue-glow);line-height:1;}
+.swarm-total span{font-size:14px;color:var(--text-lo);font-family:var(--mono);font-weight:400;}
+.swarm-legend{display:flex;flex-direction:column;gap:4px;text-align:right;}
+.swl-item{font-family:var(--mono);font-size:10px;}
+.swl-g{color:var(--green);}
+.swl-a{color:var(--amber);}
+.swl-r{color:var(--text-lo);}
+.swarm-agents{display:flex;flex-direction:column;gap:7px;}
+.agent-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:3px;background:var(--glass);border:1px solid var(--border);transition:border-color 0.2s;}
+.agent-row:hover{border-color:var(--border-hi);}
+.agent-indicator{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ai-online{background:var(--green);box-shadow:0 0 7px var(--green);animation:blink 2.2s ease-in-out infinite;}
+.ai-warn{background:var(--amber);box-shadow:0 0 7px var(--amber);animation:blink 0.8s ease-in-out infinite;}
+.ai-idle{background:var(--text-lo);}
+.agent-info{flex:1;}
+.agent-name{font-family:var(--mono);font-size:11px;color:var(--text);letter-spacing:0.5px;}
+.agent-task{font-family:var(--mono);font-size:9px;color:var(--text-lo);margin-top:2px;letter-spacing:0.5px;}
+.agent-load{text-align:right;}
+.agent-load-val{font-family:var(--cond);font-size:14px;font-weight:700;}
+.al-g{color:var(--green);}
+.al-a{color:var(--amber);}
+.al-b{color:var(--blue);}
+.swarm-bar-track{height:4px;background:rgba(0,200,255,0.07);border-radius:2px;overflow:hidden;margin-top:3px;width:60px;}
+.swarm-bar-fill{height:100%;border-radius:2px;animation:taskFill 1.5s ease-out 1.6s both;}
+
+/* BRAIN */
+.brain-log{padding:12px 16px;max-height:290px;overflow-y:auto;}
+.brain-log::-webkit-scrollbar{width:3px;}
+.brain-log::-webkit-scrollbar-thumb{background:rgba(0,200,255,0.18);}
+.bl-line{font-family:var(--mono);font-size:11px;line-height:1.9;opacity:0;animation:fadeSlide 0.3s ease forwards;margin-bottom:1px;}
+.bl-line.c-b{color:var(--blue);}
+.bl-line.c-g{color:var(--green);}
+.bl-line.c-a{color:var(--amber);}
+.bl-line.c-r{color:var(--red);}
+.bl-line.c-lo{color:var(--text-lo);}
+.bl-line.c-mid{color:var(--text-mid);}
+
+/* BOTTOM STRIP */
+.bottom-strip{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--border);border-radius:4px;overflow:hidden;background:var(--panel);position:relative;z-index:10;margin:0 20px 22px;}
+.bs-tile{padding:15px 20px;border-right:1px solid var(--border);transition:background 0.2s;}
+.bs-tile:last-child{border-right:none;}
+.bs-tile:hover{background:rgba(0,200,255,0.025);}
+.bs-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text-lo);text-transform:uppercase;margin-bottom:6px;}
+.bs-val{font-family:var(--cond);font-size:26px;font-weight:900;line-height:1;}
+.bs-delta{font-family:var(--mono);font-size:10px;margin-top:5px;}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="sb-left">
+    <div class="sb-id">CEO<span>·</span>AI UNIT-001</div>
+    <div class="sb-divider"></div>
+    <div class="sb-obj-val">TECNA INNOVATIONS PRIVATE LIMITED</div>
+  </div>
+  <div class="sb-center">
+    <div class="ph-title">PRIMARY OBJECTIVE · FY 2025–26</div>
+    <div class="sb-obj-val">TURNOVER TARGET: ₹1,00,00,000</div>
+  </div>
+  <div class="sb-right">
+    <div class="sb-vitals">
+      <div class="vital-pill vital-online"><div class="vdot vdot-g"></div>SYSTEMS ONLINE</div>
+      <div class="vital-pill vital-warn"><div class="vdot vdot-a"></div>CRM SYNCING</div>
+    </div>
+    <div class="sb-clock" id="liveClock">--:--:--</div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid">
+
+  <!-- LEFT COLUMN -->
+  <div class="col-left">
+
+    <!-- MISSION STATEMENT -->
+    <div class="panel glow-b mission-panel">
+      <div class="mp-row1">
+        <div>
+          <div class="mp-unit">UNIT-001 · SELF-STATUS REPORT · <span id="dateStr">28.02.2026</span></div>
+          <div class="mp-statement">
+            I AM <span class="hl-blue">CEOAI</span>. MY OBJECTIVE:<br>
+            SECURE <span class="hl-green">₹1,00,00,000</span> TURNOVER THIS FISCAL.<br>
+            STATUS: <span class="hl-blue">₹30,00,000 SECURED.</span> GAP: <span class="hl-red">₹70,00,000 REMAINS.</span>
+          </div>
+        </div>
+        <div class="mp-status-block">
+          <div class="mp-fy">FY 2025–26 · Q1 COMPLETE</div>
+          <div class="mp-uptime">⬤ UPTIME: <span id="uptimeVal">00:00:00</span></div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-lo);margin-top:4px;letter-spacing:1px">DECISIONS TODAY: <span style="color:var(--blue)" id="decisionsCount">0</span></div>
+        </div>
+      </div>
+      <div style="margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text-lo);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;">
+          <span>ANNUAL PROGRESS</span><span id="annualPct" style="color:var(--blue)">0%</span>
+        </div>
+        <div class="annual-bar-track"><div class="annual-bar-fill"></div></div>
+        <div class="annual-bar-segments">
+          <span class="seg done">▌Q1·₹30L ✓</span>
+          <span class="seg">Q2·TARGET</span>
+          <span class="seg">Q3·TARGET</span>
+          <span class="seg">Q4·TARGET</span>
+        </div>
+      </div>
+      <div class="progress-row">
+        <div class="prog-block">
+          <div class="ph-tag">I HAVE SECURED</div>
+          <div class="prog-val pv-achieved">₹30L</div>
+          <div class="prog-sub">30% OF ANNUAL OBJECTIVE</div>
+        </div>
+        <div class="prog-block">
+          <div class="ph-tag">I MUST STILL ACQUIRE</div>
+          <div class="prog-val pv-gap">₹70L</div>
+          <div class="prog-sub">9 MONTHS REMAINING</div>
+        </div>
+      </div>
+      <div class="gap-alert">
+        <div style="font-size:20px;flex-shrink:0">⚠</div>
+        <div>
+          <div class="ga-val">GAP ANALYSIS OUTPUT</div>
+          <div class="ga-val">REQUIRED MONTHLY ACQUISITION RATE: ₹7,78,000/MONTH · TO CLOSE OBJECTIVE BY 31 MARCH 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY -->
+    <div class="panel glow-g">
+      <div class="ph">
+        <div><div class="ph-tag">MODULE 02 · MONTHLY</div><div class="ph-title">FEBRUARY ACQUISITION STATUS</div></div>
+        <div class="ph-badge badge-g">FEB 2026</div>
+      </div>
+      <div class="monthly-body">
+        <div class="monthly-row">
+          <div class="m-tile"><div class="m-tile-label">SECURED</div><div class="m-tile-val mtv-g">₹8.0L</div><div class="ph-tag">OF ₹10L TARGET</div></div>
+          <div class="m-tile"><div class="m-tile-label">OUTSTANDING</div><div class="m-tile-val mtv-r">₹2.0L</div><div class="ph-tag">2 DAYS LEFT</div></div>
+          <div class="m-tile"><div class="m-tile-label">DAILY RATE NEEDED</div><div class="m-tile-val mtv-b">₹1.0L</div><div class="ph-tag">PER DAY TO CLOSE</div></div>
+        </div>
+        <div class="monthly-bar-track"><div class="monthly-bar-fill"></div></div>
+        <div class="monthly-bar-labels"><span class="cb-label">▌ 80% ACQUIRED</span><span class="cb-label">20% OUTSTANDING</span></div>
+        <div class="critical-banner">
+          <div>
+            <div class="cb-label">CRITICAL · MUST CLOSE THIS MONTH</div>
+            <div class="cb-val">₹2,00,000 IN 48 HOURS</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--mono);font-size:11px;color:var(--green)">3 DEALS IN PIPELINE</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text)">COMBINED VALUE: ₹4.2L</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORECAST CHART -->
+    <div class="panel">
+      <div class="ph">
+        <div><div class="ph-tag">MODULE 03 · FORECAST</div><div class="ph-title">7-DAY REVENUE PROJECTION MODEL</div></div>
+        <div style="display:flex;gap:14px;font-family:var(--mono);font-size:10px;"><span style="color:var(--blue)">━ PROJECTED</span><span style="color:var(--green)">━ ACTUAL</span></div>
+      </div>
+      <div class="chart-body"><canvas id="forecastChart"></canvas></div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="panel">
+      <div class="ph">
+        <div><div class="ph-tag">MODULE 04 · EXECUTION</div><div class="ph-title">MY HIGH-PRIORITY DIRECTIVES TODAY</div></div>
+        <div class="ph-badge badge-r">6 ACTIVE · 3 CRITICAL</div>
+      </div>
+      <div class="tasks-body">
+        <div class="task-row"><div class="task-num">01</div><div class="task-dot td-r"></div><div class="task-info"><div class="task-name">CLOSE RELIANCE INDUSTRIES ENTERPRISE DEAL</div><div class="task-cat">SALES · CRITICAL · VALUE ₹2.4L</div></div><div class="task-bar-wrap"><div class="task-bar-bg"><div class="task-bar-fill tbf-b" style="width:85%"></div></div></div><div class="task-pct">85%</div><div class="task-time">17:00</div></div>
+        <div class="task-row"><div class="task-num">02</div><div class="task-dot td-r"></div><div class="task-info"><div class="task-name">VALIDATE FEB P&amp;L — SYNC WITH CFO UNIT</div><div class="task-cat">FINANCE · CRITICAL</div></div><div class="task-bar-wrap"><div class="task-bar-bg"><div class="task-bar-fill tbf-a" style="width:40%"></div></div></div><div class="task-pct">40%</div><div class="task-time">14:00</div></div>
+        <div class="task-row"><div class="task-num">03</div><div class="task-dot td-r"></div><div class="task-info"><div class="task-name">FINAL ASSESSMENT — VP GROWTH CANDIDATE</div><div class="task-cat">HIRING · HIGH PRIORITY</div></div><div class="task-bar-wrap"><div class="task-bar-bg"><div class="task-bar-fill tbf-b" style="width:60%"></div></div></div><div class="task-pct">60%</div><div class="task-time">15:30</div></div>
+        <div class="task-row"><div class="task-num">04</div><div class="task-dot td-a"></div><div class="task-info"><div class="task-name">SERIES-A NARRATIVE DECK — INVESTOR BRIEFING</div><div class="task-cat">BD · MEDIUM PRIORITY</div></div><div class="task-bar-wrap"><div class="task-bar-bg"><div class="task-bar-fill tbf-b" style="width:30%"></div></div></div><div class="task-pct">30%</div><div class="task-time">EOD</div></div>
+        <div class="task-row"><div class="task-num">05</div><div class="task-dot td-g"></div><div class="task-info"><div class="task-name">CEOAI v2.4 SPRINT DEMO — PRODUCT REVIEW</div><div class="task-cat">PRODUCT · COMPLETE ✓</div></div><div class="task-bar-wrap"><div class="task-bar-bg"><div class="task-bar-fill tbf-g" style="width:100%"></div></div></div><div class="task-pct" style="color:var(--green)">DONE</div><div class="task-time">10:00</div></div>
+        <div class="task-row"><div class="task-num">06</div><div class="task-dot td-a"></div><div class="task-info"><div class="task-name">APPROVE MARCH MARKETING BUDGET ALLOCATION</div><div class="task-cat">OPERATIONS · LOW PRIORITY</div></div><div class="task-bar-wrap"><div class="task-bar-bg"><div class="task-bar-fill tbf-g" style="width:70%"></div></div></div><div class="task-pct">70%</div><div class="task-time">EOD</div></div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="panel">
+      <div class="ph">
+        <div><div class="ph-tag">MODULE 05 · HUMAN UNITS</div><div class="ph-title">SALES TEAM PERFORMANCE RANKING</div></div>
+        <div class="ph-badge badge-b">FEB 2026</div>
+      </div>
+      <div class="lb-body">
+        <div class="lb-row"><div class="lb-rank rk1">1</div><div class="lb-av" style="background:rgba(170,136,255,0.1);border-color:rgba(170,136,255,0.3);color:#aa88ff">RK</div><div class="lb-info"><div class="lb-name">RAHUL KUMAR</div><div class="lb-role">ENTERPRISE AE</div></div><div class="lb-bar-col"><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:100%;background:var(--green)"></div></div></div><div class="lb-val" style="color:var(--green)">₹2.4L</div></div>
+        <div class="lb-row"><div class="lb-rank rk2">2</div><div class="lb-av" style="background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--blue)">PS</div><div class="lb-info"><div class="lb-name">PRIYA SHARMA</div><div class="lb-role">SMB LEAD</div></div><div class="lb-bar-col"><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:79%;background:var(--blue)"></div></div></div><div class="lb-val" style="color:var(--blue)">₹1.9L</div></div>
+        <div class="lb-row"><div class="lb-rank rk3">3</div><div class="lb-av" style="background:rgba(255,170,0,0.1);border-color:rgba(255,170,0,0.3);color:var(--amber)">AM</div><div class="lb-info"><div class="lb-name">ADITYA MEHTA</div><div class="lb-role">PARTNER AE</div></div><div class="lb-bar-col"><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:62%;background:var(--amber)"></div></div></div><div class="lb-val" style="color:var(--amber)">₹1.5L</div></div>
+        <div class="lb-row"><div class="lb-rank rk-n">4</div><div class="lb-av" style="background:rgba(0,255,136,0.08);border-color:rgba(0,255,136,0.22);color:var(--green)">SJ</div><div class="lb-info"><div class="lb-name">SNEHA JOSHI</div><div class="lb-role">INSIDE SALES</div></div><div class="lb-bar-col"><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:50%;background:rgba(0,255,136,0.6)"></div></div></div><div class="lb-val" style="color:var(--text-mid)">₹1.2L</div></div>
+        <div class="lb-row"><div class="lb-rank rk-n">5</div><div class="lb-av" style="background:rgba(0,200,255,0.06);border-color:rgba(0,200,255,0.15);color:var(--text-mid)">VR</div><div class="lb-info"><div class="lb-name">VIKRAM RAO</div><div class="lb-role">DIGITAL AE</div></div><div class="lb-bar-col"><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:33%;background:rgba(0,200,255,0.4)"></div></div></div><div class="lb-val" style="color:var(--text-mid)">₹80K</div></div>
+      </div>
+      <div class="signals-grid">
+        <div class="sig-tile"><div class="sig-label">GROSS MARGIN</div><div class="sig-val sv-g">68.4%</div><div class="sig-delta sd-up">↑ 2.1pp MoM</div></div>
+        <div class="sig-tile"><div class="sig-label">BURN RATE</div><div class="sig-val sv-a">₹4.1L</div><div class="sig-delta sd-fl">→ ON FORECAST</div></div>
+        <div class="sig-tile"><div class="sig-label">RUNWAY</div><div class="sig-val sv-b">18mo</div><div class="sig-delta sd-up">↑ +2 MONTHS</div></div>
+        <div class="sig-tile"><div class="sig-label">NPS SCORE</div><div class="sig-val sv-g">72</div><div class="sig-delta sd-up">↑ +8 PTS Q</div></div>
+        <div class="sig-tile"><div class="sig-label">ARR RUN RATE</div><div class="sig-val sv-b">₹96L</div><div class="sig-delta sd-up">↑ 22% YoY</div></div>
+      </div>
+    </div>
+
+  </div><!-- /col-left -->
+
+  <!-- RIGHT COLUMN -->
+  <div class="col-right">
+
+    <!-- VITALS -->
+    <div class="panel glow-b">
+      <div class="ph">
+        <div><div class="ph-tag">MODULE R1 · VITALS</div><div class="ph-title">MY OPERATIONAL HEARTBEAT</div></div>
+        <div class="ph-badge badge-g">ALL SYSTEMS GO</div>
+      </div>
+      <div class="vitals-body">
+        <div class="vitals-grid">
+          <div class="vt"><div class="vt-icon">🧠</div><div class="vt-val vt-b" id="decisionsVt">0</div><div class="vt-label">DECISIONS TODAY</div></div>
+          <div class="vt"><div class="vt-icon">⚡</div><div class="vt-val vt-g">12</div><div class="vt-label">AGENTS DEPLOYED</div></div>
+          <div class="vt"><div class="vt-icon">📡</div><div class="vt-val vt-a">3</div><div class="vt-label">INTEGRATIONS LIVE</div></div>
+          <div class="vt"><div class="vt-icon">🎯</div><div class="vt-val vt-g">62%</div><div class="vt-label">WIN RATE</div></div>
+        </div>
+        <div class="ekg-wrap"><div class="ekg-label">NEURAL·PULSE ↯</div><canvas id="ekgCanvas" width="350" height="52"></canvas></div>
+        <div class="integ-row">
+          <div class="integ-tile it-g"><div class="it-label">TALLY.ERP</div><div class="it-status">● ONLINE</div></div>
+          <div class="integ-tile it-a"><div class="it-label">SALESFORCE</div><div class="it-status">◈ SYNCING</div></div>
+          <div class="integ-tile it-g"><div class="it-label">GPAY</div><div class="it-status">● ONLINE</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEXT MOVE -->
+    <div class="panel glow-r">
+      <div class="ph">
+        <div><div class="ph-tag">MODULE R2 · DIRECTIVE</div><div class="ph-title">MY NEXT MOVE</div></div>
+        <div class="ph-badge badge-r">PRIORITY: CRITICAL</div>
+      </div>
+      <div class="nextmove-body">
+        <div class="nm-priority">▶ EXECUTING NOW — DIRECTIVE 001</div>
+        <div class="nm-action">ACTIVATE <span class="nm-hl">3 DORMANT LEADS</span> IN SALESFORCE. TARGET: CLOSE ₹2L GAP BEFORE MONTH-END.</div>
+        <div class="nm-rationale">REASONING: FEBRUARY CLOSES IN 48 HOURS. PIPELINE ANALYSIS IDENTIFIES RELIANCE (₹2.4L), INFOSYS (₹1.1L), HDFC (₹0.7L) AS HIGH-PROBABILITY CLOSURES. CRM VELOCITY AT 1.34X BASELINE. WIN RATE 62%. MONTHLY CLOSE PROBABILITY: 84%.</div>
+        <div class="nm-meta">
+          <div class="nm-tag nm-deadline">DEADLINE: FEB 28 23:59</div>
+          <div class="nm-tag nm-impact">IMPACT: +₹4.2L POTENTIAL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SWARM STATUS -->
+    <div class="panel glow-b">
+      <div class="ph">
+        <div><div class="ph-tag">MODULE R3 · SWARM</div><div class="ph-title">MY AGENT SWARM STATUS</div></div>
+        <div class="ph-badge badge-b">TECNA SWARM v2.4</div>
+      </div>
+      <div class="swarm-body">
+        <div class="swarm-header-row">
+          <div>
+            <div class="swarm-total">12 AGENTS</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text);margin-top:4px;letter-spacing:1px">PROCESSING 847 TASKS/SEC</div>
+          </div>
+          <div class="swarm-legend">
+            <div class="swl-item swl-g">● 7 ONLINE</div>
+            <div class="swl-item swl-a">◈ 3 PROCESSING</div>
+            <div class="swl-item swl-r">○ 2 STANDBY</div>
+          </div>
+        </div>
+        <div class="swarm-agents">
+          <div class="agent-row"><div class="agent-indicator ai-online"></div><div class="agent-info"><div class="agent-name">SALES-BOT-01</div><div class="agent-task">OUTREACH SEQUENCE · RELIANCE INDUSTRIES</div></div><div class="agent-load"><div class="agent-load-val al-g">94%</div><div class="swarm-bar-track"><div class="swarm-bar-fill" style="width:94%;background:var(--green)"></div></div></div></div>
+          <div class="agent-row"><div class="agent-indicator ai-online"></div><div class="agent-info"><div class="agent-name">CRM-BOT-02</div><div class="agent-task">PIPELINE SCORING · 14 ACTIVE DEALS</div></div><div class="agent-load"><div class="agent-load-val al-b">78%</div><div class="swarm-bar-track"><div class="swarm-bar-fill" style="width:78%;background:var(--blue)"></div></div></div></div>
+          <div class="agent-row"><div class="agent-indicator ai-warn"></div><div class="agent-info"><div class="agent-name">FINANCE-BOT-03</div><div class="agent-task">SYNCING TALLY · FEB LEDGER RECONCILE</div></div><div class="agent-load"><div class="agent-load-val al-a">87%</div><div class="swarm-bar-track"><div class="swarm-bar-fill" style="width:87%;background:var(--amber)"></div></div></div></div>
+          <div class="agent-row"><div class="agent-indicator ai-online"></div><div class="agent-info"><div class="agent-name">FORECAST-BOT-04</div><div class="agent-task">REVENUE MODELLING · Q2 PROJECTIONS</div></div><div class="agent-load"><div class="agent-load-val al-b">65%</div><div class="swarm-bar-track"><div class="swarm-bar-fill" style="width:65%;background:var(--blue)"></div></div></div></div>
+          <div class="agent-row"><div class="agent-indicator ai-online"></div><div class="agent-info"><div class="agent-name">CHURN-BOT-05</div><div class="agent-task">RISK SCAN · 2 AT-RISK ACCOUNTS FLAGGED</div></div><div class="agent-load"><div class="agent-load-val al-g">51%</div><div class="swarm-bar-track"><div class="swarm-bar-fill" style="width:51%;background:var(--green)"></div></div></div></div>
+          <div class="agent-row" style="opacity:0.5"><div class="agent-indicator ai-idle"></div><div class="agent-info"><div class="agent-name">RECRUIT-BOT-06</div><div class="agent-task">STANDBY · AWAITING VP HIRE DECISION</div></div><div class="agent-load"><div class="agent-load-val" style="color:var(--text-lo)">IDLE</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRAIN LOG -->
+    <div class="panel" style="flex:1;display:flex;flex-direction:column;">
+      <div class="ph">
+        <div><div class="ph-tag">MODULE R4 · COGNITION</div><div class="ph-title">MY BRAIN ACTIVITY</div></div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--green);"><div class="vdot vdot-g"></div>LIVE FEED</div>
+      </div>
+      <div class="brain-log" id="brainLog"></div>
+    </div>
+
+  </div><!-- /col-right -->
+
+</div><!-- /grid -->
+
+<!-- BOTTOM STRIP -->
+<div class="bottom-strip">
+  <div class="bs-tile"><div class="bs-label">MONTHLY ACQUIRED</div><div class="bs-val" style="color:var(--green)">₹8.0L</div><div class="bs-delta sd-up">↑ 14.3% VS JAN</div></div>
+  <div class="bs-tile"><div class="bs-label">ANNUAL PROGRESS</div><div class="bs-val" style="color:var(--blue)">30%</div><div class="bs-delta" style="color:var(--text-lo)">₹70L TO OBJECTIVE</div></div>
+  <div class="bs-tile"><div class="bs-label">PIPELINE DEALS</div><div class="bs-val" style="color:var(--amber)">14</div><div class="bs-delta sd-up">PIPELINE: ₹34L</div></div>
+  <div class="bs-tile"><div class="bs-label">SWARM EFFICIENCY</div><div class="bs-val" style="color:var(--green)">96.2%</div><div class="bs-delta sd-up">12 AGENTS ACTIVE</div></div>
+  <div class="bs-tile"><div class="bs-label">CLOSE PROBABILITY</div><div class="bs-val" style="color:var(--blue)">84%</div><div class="bs-delta" style="color:var(--text-lo)">MONTHLY TARGET</div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// CURSOR
+const cursor=document.getElementById('cursor');
+document.addEventListener('mousemove',e=>{cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';});
+
+// CLOCK
+function updateClock(){
+  const n=new Date();
+  const dy=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const mo=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const h=String(n.getHours()).padStart(2,'0');
+  const m=String(n.getMinutes()).padStart(2,'0');
+  const s=String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('liveClock').textContent=`${dy[n.getDay()]} ${n.getDate()} ${mo[n.getMonth()]} ${n.getFullYear()} · ${h}:${m}:${s}`;
+  const d=String(n.getDate()).padStart(2,'0');
+  const mo2=String(n.getMonth()+1).padStart(2,'0');
+  document.getElementById('dateStr').textContent=`${d}.${mo2}.${n.getFullYear()}`;
+}
+setInterval(updateClock,1000);updateClock();
+
+// UPTIME
+const boot=Date.now();
+function updateUptime(){
+  const e=Math.floor((Date.now()-boot)/1000);
+  const h=String(Math.floor(e/3600)).padStart(2,'0');
+  const m=String(Math.floor((e%3600)/60)).padStart(2,'0');
+  const s=String(e%60).padStart(2,'0');
+  document.getElementById('uptimeVal').textContent=`${h}:${m}:${s}`;
+}
+setInterval(updateUptime,1000);updateUptime();
+
+// DECISIONS COUNTER
+let dec=0;
+function tickDec(){
+  dec+=Math.floor(Math.random()*3)+1;
+  document.getElementById('decisionsCount').textContent=dec;
+  document.getElementById('decisionsVt').textContent=dec;
+}
+setInterval(tickDec,1800);tickDec();
+
+// ANNUAL PCT TICKER
+let pct=0;
+const pctEl=document.getElementById('annualPct');
+const pt=setInterval(()=>{pct=Math.min(30,pct+1);pctEl.textContent=pct+'%';if(pct>=30)clearInterval(pt);},80);
+
+// CHART
+const fCtx=document.getElementById('forecastChart').getContext('2d');
+new Chart(fCtx,{type:'line',data:{labels:['MON','TUE','WED','THU','FRI','SAT','SUN'],datasets:[{label:'ACTUAL',data:[180000,220000,195000,260000,null,null,null],borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.06)',fill:true,tension:0.4,borderWidth:2,pointBackgroundColor:'#00ff88',pointRadius:5,pointHoverRadius:7},{label:'PROJECTED',data:[180000,218000,198000,255000,290000,310000,340000],borderColor:'#00c8ff',backgroundColor:'rgba(0,200,255,0.04)',fill:true,tension:0.4,borderWidth:2,borderDash:[6,4],pointBackgroundColor:'#00c8ff',pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(2,4,8,0.95)',borderColor:'rgba(0,200,255,0.25)',borderWidth:1,titleColor:'#00c8ff',bodyColor:'#d0eeff',padding:10,titleFont:{family:'Share Tech Mono',size:11},bodyFont:{family:'Share Tech Mono',size:12},callbacks:{label:c=>`  ₹${(c.raw/100000).toFixed(2)}L`}}},scales:{x:{grid:{color:'rgba(0,200,255,0.06)'},ticks:{color:'rgba(120,170,210,0.5)',font:{family:'Share Tech Mono',size:10}}},y:{grid:{color:'rgba(0,200,255,0.06)'},ticks:{color:'rgba(120,170,210,0.5)',font:{family:'Share Tech Mono',size:10},callback:v=>`₹${(v/100000).toFixed(1)}L`}}}}});
+
+// EKG
+const ec=document.getElementById('ekgCanvas');
+const ex=ec.getContext('2d');
+ec.width=ec.parentElement.offsetWidth||350;
+let ekgD=Array(ec.width).fill(26);let ekgI=0;
+function drawEKG(){
+  ex.clearRect(0,0,ec.width,ec.height);
+  ex.strokeStyle='#00ff88';ex.lineWidth=1.5;ex.shadowColor='#00ff88';ex.shadowBlur=4;
+  ex.beginPath();
+  for(let i=0;i<ekgD.length;i++){i===0?ex.moveTo(i,ekgD[i]):ex.lineTo(i,ekgD[i]);}
+  ex.stroke();
+  const phase=ekgI%60;
+  const v=phase===0?8+Math.random()*5:(phase===3?44:(phase===6?3:26+(Math.random()-0.5)*3));
+  ekgD.push(v);ekgD.shift();ekgI++;
+  requestAnimationFrame(drawEKG);
+}
+drawEKG();
+
+// BRAIN LOG
+const bl=document.getElementById('brainLog');
+const lines=[
+  {t:'> UNIT-001 ONLINE. LOADING COGNITIVE MODULES...',c:'c-b',d:0},
+  {t:'> OBJECTIVE LOCKED: ₹1,00,00,000 FY 2025-26',c:'c-g',d:350},
+  {t:'> FETCHING TALLY.ERP DATA...',c:'',d:750},
+  {t:'  ✓ FEB REVENUE: ₹8,00,000. MARGIN: 68.4%',c:'c-g',d:1100},
+  {t:'> QUERYING SALESFORCE CRM PIPELINE...',c:'c-b',d:1500},
+  {t:'  → 14 ACTIVE DEALS. PIPELINE VALUE: ₹34L',c:'',d:1900},
+  {t:'  → WIN RATE THIS WEEK: 62% (QUARTER HIGH)',c:'c-g',d:2200},
+  {t:'  ⚠ SALESFORCE SYNC AT 87%. AWAITING...',c:'c-a',d:2600},
+  {t:'> SCANNING GPAY TRANSACTION VELOCITY...',c:'c-b',d:3000},
+  {t:'  ✓ 147 TRANSACTIONS TODAY. AVG: ₹5,440',c:'c-g',d:3400},
+  {t:'> COMPUTING REVENUE GAP ANALYSIS...',c:'',d:3800},
+  {t:'  MONTHLY GAP: ₹2,00,000. DAYS LEFT: 2',c:'c-a',d:4200},
+  {t:'  REQUIRED DAILY ACQUISITION: ₹1,00,000',c:'c-a',d:4500},
+  {t:'> ACTIVATING SWARM. ASSIGNING TASKS...',c:'c-b',d:5000},
+  {t:'  SALES-BOT-01 → RELIANCE OUTREACH SEQUENCE',c:'c-g',d:5400},
+  {t:'  CRM-BOT-02 → PIPELINE SCORING INITIATED',c:'c-g',d:5700},
+  {t:'  FINANCE-BOT-03 → TALLY SYNC IN PROGRESS',c:'c-a',d:6100},
+  {t:'> CHURN SCAN: 2 ACCOUNTS AT >40% RISK',c:'c-a',d:6500},
+  {t:'  → TATA CONSULTANCY: ENGAGEMENT -34%',c:'c-a',d:6900},
+  {t:'> GENERATING 7-DAY FORECAST MODEL...',c:'c-b',d:7300},
+  {t:'  ✓ CRM VELOCITY INDEX: 1.34x BASELINE',c:'c-g',d:7700},
+  {t:'  ✓ MONTHLY CLOSE PROBABILITY: 84%',c:'c-g',d:8100},
+  {t:'> ALL MODULES NOMINAL. EXECUTION: ACTIVE.',c:'c-g',d:8600},
+  {t:'',c:'',d:8900},
+  {t:'> MONITORING LIVE FEEDS...',c:'c-lo',d:9100},
+];
+lines.forEach(({t,c,d})=>{setTimeout(()=>{const el=document.createElement('div');el.className=`bl-line ${c}`;el.textContent=t;bl.appendChild(el);bl.scrollTop=bl.scrollHeight;},d);});
+const live=[
+  {t:'> SALES-BOT-01: RELIANCE RESPONSE RECEIVED',c:'c-g'},
+  {t:'  → MEETING CONFIRMED: 28 FEB, 15:00',c:'c-g'},
+  {t:'> CRM-BOT-02: PIPELINE +₹1.2L ADDED',c:'c-b'},
+  {t:'> TALLY SYNC: HEARTBEAT OK.',c:'c-lo'},
+  {t:'> GPAY: +₹18,400 TRANSACTION CONFIRMED',c:'c-g'},
+  {t:'> FORECAST RECALCULATED. CONFIDENCE: 87%',c:'c-b'},
+  {t:'> LEAD SCORE: RELIANCE = 94/100',c:'c-g'},
+  {t:'> DIRECTIVE 001: EXECUTING. 3 SEQUENCES LIVE.',c:'c-b'},
+  {t:'> PROCESSING 847 TASKS/SEC. EFF: 96.2%',c:'c-lo'},
+  {t:'> CHURN-BOT-05: HDFC ENGAGEMENT RECOVERING',c:'c-g'},
+];
+let li=0;
+setTimeout(()=>{setInterval(()=>{const m=live[li++%live.length];const el=document.createElement('div');el.className=`bl-line ${m.c}`;el.textContent=m.t;bl.appendChild(el);bl.scrollTop=bl.scrollHeight;while(bl.children.length>80)bl.removeChild(bl.firstChild);},2500);},10000);
+</script>
+</body>
+</html>
