@@ -19,7 +19,7 @@ from IPython.display import Audio, display
 # API KEY
 # ================================
 
-GEMINI_API_KEY = "AIzaSyAVX_O9HbrbSIrkjX9ecb2ZJv2W3Wi5yCg"
+GEMINI_API_KEY = ""
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # ================================
